@@ -93,14 +93,16 @@ def _build(trigger: dict, merchant: dict, category: dict, customer: Optional[dic
                     rationale=f"Lever: reciprocity. Anchor: merchant.performance.delta_7d (template fallback).")
 
     if kind == "supply_alert":
-        batches = payload.get("batches") or payload.get("batch_ids") or []
+        batches = (payload.get("affected_batches") or payload.get("batches")
+                   or payload.get("batch_ids") or [])
         molecule = payload.get("molecule") or payload.get("medicine") or "the affected batch"
         bstr = ", ".join(batches[:3]) if isinstance(batches, list) else str(batches)
+        bsuffix = f" ({bstr})" if bstr else ""
         if hi:
-            body = (f"{g}, {molecule} ({bstr}) ka recall / replacement aaya hai — "
+            body = (f"{g}, {molecule}{bsuffix} ka recall / replacement aaya hai — "
                     f"affected customers ki list nikaal du? Reply YES.")
         else:
-            body = (f"{g}, {molecule} batches {bstr} need replacement. "
+            body = (f"{g}, {molecule}{(' batches ' + bstr) if bstr else ''} need replacement. "
                     f"Want me to pull affected customers? Reply YES.")
         return dict(body=body, cta="yes_no", suppression_key=sup,
                     rationale="Lever: loss_aversion. Anchor: trigger.payload.batches (template fallback).")
