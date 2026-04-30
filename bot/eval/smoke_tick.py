@@ -7,7 +7,7 @@ from pathlib import Path
 import urllib.request
 import urllib.error
 
-BASE = "http://127.0.0.1:8080"
+import os; BASE = os.getenv("BOT_BASE","http://127.0.0.1:8080")
 ROOT = Path(__file__).resolve().parent.parent.parent
 EXP = ROOT / "expanded"
 
@@ -88,3 +88,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
