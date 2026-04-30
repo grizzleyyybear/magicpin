@@ -133,6 +133,221 @@ def _build(trigger: dict, merchant: dict, category: dict, customer: Optional[dic
         return dict(body=body, cta="yes_no", suppression_key=sup,
                     rationale=f"Lever: loss_aversion. Anchor: trigger.payload.festival (template fallback).")
 
+    if kind == "competitor_opened":
+        comp = payload.get("competitor_name") or "a new competitor"
+        dist = payload.get("distance_km")
+        their = payload.get("their_offer") or ""
+        anchor = f' Unka offer: "{their}".' if their else ""
+        dist_s = f" {dist} km dur" if dist else ""
+        if hi:
+            body = (f"{g}, {comp}{dist_s} pe khul gaya hai.{anchor} "
+                    f"Aapka counter-offer + 'why us' message draft karu? Reply YES.")
+        else:
+            body = (f"{g}, {comp} just opened{(' ' + str(dist) + ' km away') if dist else ''}.{anchor} "
+                    f"Want me to draft a counter-offer + 'why us' message? Reply YES.")
+        return dict(body=body, cta="yes_no", suppression_key=sup,
+                    rationale="Lever: loss_aversion. Anchor: trigger.payload.competitor (template).")
+
+    if kind == "review_theme_emerged":
+        theme = payload.get("theme", "a recurring concern")
+        n = payload.get("occurrences_30d", "")
+        quote = payload.get("common_quote", "")
+        qstr = f' Sample: "{quote}".' if quote else ""
+        if hi:
+            body = (f"{g}, pichle 30 din mein {n} reviews mein '{theme}' theme uthi hai.{qstr} "
+                    f"Ek public reply + ek operations fix sujha doon? Reply YES.")
+        else:
+            body = (f"{g}, {n} reviews in last 30d flagged '{theme}'.{qstr} "
+                    f"Want a public reply template + 1 ops fix? Reply YES.")
+        return dict(body=body, cta="yes_no", suppression_key=sup,
+                    rationale="Lever: loss_aversion. Anchor: trigger.payload.theme (template).")
+
+    if kind == "milestone_reached":
+        metric = payload.get("metric", "milestone")
+        nv = payload.get("value_now", "")
+        mv = payload.get("milestone_value", "")
+        if hi:
+            body = (f"{g}, aapka {metric} {nv} pe pahunch gaya hai — {mv} bas thoda dur. "
+                    f'"Thank you" creative + ek incentive post launch karu? Reply YES.')
+        else:
+            body = (f"{g}, your {metric} just hit {nv} — only {mv} away from the milestone. "
+                    f'Want a "thank you" creative + an incentive post? Reply YES.')
+        return dict(body=body, cta="yes_no", suppression_key=sup,
+                    rationale="Lever: social_proof. Anchor: merchant.performance.metric (template).")
+
+    if kind == "renewal_due":
+        days = payload.get("days_remaining", "")
+        plan = payload.get("plan", "Pro")
+        amt = payload.get("renewal_amount", "")
+        amt_s = f" Rs {amt}" if amt else ""
+        if hi:
+            body = (f"{g}, aapka {plan} plan{amt_s} renewal {days} din mein due hai. "
+                    f"1-tap renewal link bhej du? Reply YES.")
+        else:
+            body = (f"{g}, your {plan} plan renews in {days} days{amt_s}. "
+                    f"Should I send the 1-tap renewal? Reply YES.")
+        return dict(body=body, cta="yes_no", suppression_key=sup,
+                    rationale="Lever: loss_aversion. Anchor: trigger.payload.days_remaining (template).")
+
+    if kind == "winback_eligible":
+        d = payload.get("days_since_expiry", "")
+        dip = payload.get("perf_dip_pct")
+        lapsed = payload.get("lapsed_customers_added_since_expiry", "")
+        dipstr = ""
+        if isinstance(dip, (int, float)):
+            dipstr = f" calls {abs(int(dip*100))}% neeche" if hi else f" calls {abs(int(dip*100))}% down"
+        if hi:
+            body = (f"{g}, expiry ke {d} din ho gaye —{dipstr}, {lapsed} customers ne dur ja diya. "
+                    f"50% off ek week winback offer chalu karu? Reply YES.")
+        else:
+            body = (f"{g}, {d} days since expiry —{dipstr}, {lapsed} customers lapsed. "
+                    f"Want a 50%-off 7-day winback push? Reply YES.")
+        return dict(body=body, cta="yes_no", suppression_key=sup,
+                    rationale="Lever: loss_aversion. Anchor: trigger.payload (template).")
+
+    if kind == "dormant_with_vera":
+        days = payload.get("days_since_last_merchant_message", "")
+        topic = payload.get("last_topic", "")
+        ts = f" '{topic}' pe " if (topic and hi) else (f" on '{topic}' " if topic else " ")
+        if hi:
+            body = (f"{g}, aapne {days} din se message nahi kiya.{ts}quick check-in: "
+                    f"abhi sabse bada question kya hai? Bata dijiye.")
+        else:
+            body = (f"{g}, you haven't messaged in {days} days.{ts}quick check-in — "
+                    f"what's the biggest question right now? Tell me.")
+        return dict(body=body, cta="open_ended", suppression_key=sup,
+                    rationale="Lever: reciprocity. Anchor: merchant.conversation_history (template).")
+
+    if kind == "curious_ask_due":
+        if hi:
+            body = (f"{g}, aapke area mein abhi sabse zyada kya search ho raha hai — "
+                    f"main 1 fact share karu? Reply YES ya batayiye kis topic pe.")
+        else:
+            body = (f"{g}, want a quick fact about what's trending in your area this week? "
+                    f"Reply YES or tell me the topic.")
+        return dict(body=body, cta="yes_no", suppression_key=sup,
+                    rationale="Lever: curiosity. Anchor: category.trend_signals (template).")
+
+    if kind == "active_planning_intent":
+        topic = payload.get("intent_topic", "your idea")
+        last_msg = payload.get("merchant_last_message", "")
+        ms = f' Aapne kaha tha: "{last_msg[:80]}".' if last_msg else ""
+        if hi:
+            body = (f"{g}, '{topic}' pe ek 3-bullet plan + sample creative draft karu?{ms} "
+                    f"Reply YES.")
+        else:
+            body = (f"{g}, want a 3-bullet plan + sample creative for '{topic}'?{ms} "
+                    f"Reply YES.")
+        return dict(body=body, cta="yes_no", suppression_key=sup,
+                    rationale="Lever: reciprocity. Anchor: trigger.payload.intent_topic (template).")
+
+    if kind == "regulation_change":
+        deadline = payload.get("deadline_iso", "")[:10]
+        d_id = payload.get("top_item_id", "")
+        if hi:
+            body = (f"{g}, ek niyam-update aaya hai — compliance deadline {deadline} hai. "
+                    f"2-min checklist nikaal du? Reply YES.")
+        else:
+            body = (f"{g}, a regulatory update is out — compliance deadline {deadline}. "
+                    f"Want the 2-min checklist? Reply YES.")
+        return dict(body=body, cta="yes_no", suppression_key=sup,
+                    rationale=f"Lever: loss_aversion. Anchor: category.digest[{d_id}] (template).")
+
+    if kind == "seasonal_perf_dip":
+        metric = payload.get("metric", "views")
+        d = payload.get("delta_pct", 0) or 0
+        pct = abs(int(round(d * 100)))
+        note = payload.get("season_note", "seasonal pattern")
+        if hi:
+            body = (f"{g}, aapke {metric} {pct}% neeche hain — yeh expected hai ({note}). "
+                    f"Off-season retention play sujha doon? Reply YES.")
+        else:
+            body = (f"{g}, {metric} are down {pct}% — this is expected ({note}). "
+                    f"Want an off-season retention play? Reply YES.")
+        return dict(body=body, cta="yes_no", suppression_key=sup,
+                    rationale="Lever: reciprocity. Anchor: trigger.payload.is_expected_seasonal (template).")
+
+    if kind == "category_seasonal":
+        season = payload.get("season", "this season")
+        trends = payload.get("trends") or []
+        top = trends[0] if trends else ""
+        if hi:
+            body = (f"{g}, {season} mein '{top}' jaise demand spike aa rahe hain. "
+                    f"Shelf adjustment + 1 promo plan bhej du? Reply YES.")
+        else:
+            body = (f"{g}, {season} demand: {top} is spiking. "
+                    f"Want a shelf adjustment + 1 promo plan? Reply YES.")
+        return dict(body=body, cta="yes_no", suppression_key=sup,
+                    rationale="Lever: specificity. Anchor: trigger.payload.trends (template).")
+
+    if kind == "gbp_unverified":
+        uplift = payload.get("estimated_uplift_pct")
+        upstr = f" (~{int(uplift*100)}% uplift)" if isinstance(uplift, (int, float)) else ""
+        path = payload.get("verification_path", "")
+        if hi:
+            body = (f"{g}, aapka Google Business Profile ab tak verify nahi hua{upstr}. "
+                    f"{path} ke through karein — main steps bhej du? Reply YES.")
+        else:
+            body = (f"{g}, your GBP isn't verified yet{upstr}. "
+                    f"Use {path} — want me to send the steps? Reply YES.")
+        return dict(body=body, cta="yes_no", suppression_key=sup,
+                    rationale="Lever: loss_aversion. Anchor: trigger.payload.verified=false (template).")
+
+    if kind == "cde_opportunity":
+        d_id = payload.get("digest_item_id", "")
+        cred = payload.get("credits", "")
+        fee = payload.get("fee", "")
+        fee_s = " (free for members)" if "free" in str(fee) else (f" ({fee})" if fee else "")
+        if hi:
+            body = (f"{g}, ek webinar aaya hai — {cred} CDE credits{fee_s}. "
+                    f"Calendar invite bhej du? Reply YES.")
+        else:
+            body = (f"{g}, a webinar is out — {cred} CDE credits{fee_s}. "
+                    f"Want the calendar invite? Reply YES.")
+        return dict(body=body, cta="yes_no", suppression_key=sup,
+                    rationale=f"Lever: reciprocity. Anchor: category.digest[{d_id}] (template).")
+
+    if kind == "appointment_tomorrow":
+        cn = (customer or {}).get("identity", {}).get("name", "").split()[0] if customer else ""
+        own = _owner(merchant); clinic = (merchant.get("identity") or {}).get("name", "")
+        if hi:
+            body = (f"Hi {cn}, {own or clinic} se. Kal aapka appointment hai. "
+                    f"Confirm karein — haan ya nahi?")
+        else:
+            body = (f"Hi {cn}, this is {own or clinic}. Your appointment is tomorrow. "
+                    f"Confirm — yes or no?")
+        return dict(body=body, cta="yes_no", suppression_key=sup,
+                    rationale="Lever: specificity. Anchor: trigger.kind=appointment_tomorrow (template).")
+
+    if kind == "trial_followup":
+        cn = (customer or {}).get("identity", {}).get("name", "").split()[0] if customer else ""
+        own = _owner(merchant); clinic = (merchant.get("identity") or {}).get("name", "")
+        nxt = payload.get("next_session_options") or []
+        slot_label = nxt[0].get("label", "") if nxt and isinstance(nxt[0], dict) else ""
+        slot_s = f' "{slot_label}"' if slot_label else ""
+        if hi:
+            body = (f"Hi {cn}, {own or clinic} se. Trial ke baad{(' next session ' + slot_s) if slot_label else ' next session'} chahiye? "
+                    f"haan ya nahi?")
+        else:
+            body = (f"Hi {cn}, this is {own or clinic}. Want to lock the next session{slot_s}? "
+                    f"yes or no?")
+        return dict(body=body, cta="yes_no", suppression_key=sup,
+                    rationale="Lever: reciprocity. Anchor: trigger.payload.next_session_options (template).")
+
+    if kind == "customer_lapsed_hard":
+        cn = (customer or {}).get("identity", {}).get("name", "").split()[0] if customer else ""
+        own = _owner(merchant); clinic = (merchant.get("identity") or {}).get("name", "")
+        days = payload.get("days_since_last_visit", "")
+        prev = payload.get("previous_focus", "")
+        if hi:
+            body = (f"Hi {cn}, {own or clinic} se. {days} din ho gaye — pichli baar '{prev}' pe kaam kiya tha. "
+                    f"Ek free re-assessment karein?")
+        else:
+            body = (f"Hi {cn}, this is {own or clinic}. It's been {days} days — last time we focused on '{prev}'. "
+                    f"Want a free re-assessment?")
+        return dict(body=body, cta="yes_no", suppression_key=sup,
+                    rationale="Lever: reciprocity. Anchor: customer.last_visit (template).")
+
     if kind in ("recall_due", "customer_lapsed_soft", "wedding_package_followup", "chronic_refill_due", "post_visit_followup"):
         # Customer-facing.
         cn = (customer or {}).get("identity", {}).get("name", "").split()[0] if customer else ""
