@@ -11,3 +11,4 @@ bot/eval/results/
 *.tar.gz
 *.zip
 .DS_Store
+judge_simulator.py
