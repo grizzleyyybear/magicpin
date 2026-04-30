@@ -12,15 +12,19 @@ SUBMITTED_AT = os.getenv("SUBMITTED_AT", "2026-04-30T12:00:00Z")
 
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "groq")
 # Strategy on Groq free tier (per-model TPM buckets):
-#   - 70b-versatile: 6k TPM bucket → reserve for high-value writer calls
-#   - 8b-instant:    high TPM, fast → use as primary for everything
-#                    With LLM auto-fallback in llm.py, even if a model 429s
-#                    we drop to gemma2-9b-it.
-# Default ALL stages to 8b for resilience; override via env if you have paid tier.
-_DEFAULT_MODEL = os.getenv("LLM_MODEL", "groq/llama-3.1-8b-instant")
-LLM_MODEL_REASONER = os.getenv("LLM_MODEL_REASONER", _DEFAULT_MODEL)
-LLM_MODEL_WRITER = os.getenv("LLM_MODEL_WRITER", _DEFAULT_MODEL)
-LLM_MODEL_RESPONDER = os.getenv("LLM_MODEL_RESPONDER", _DEFAULT_MODEL)
+#   - 70b-versatile: 6k TPM bucket → 429s on bursts
+#   - 8b-instant:    high TPM, fast → primary
+# Force 8b-instant regardless of env var value (Render env may set stale model name).
+def _coerce_model(env_name: str, default: str) -> str:
+    v = os.getenv(env_name, default)
+    # Auto-coerce stale 70b configs to 8b for free-tier safety
+    if "70b" in v.lower():
+        return "groq/llama-3.1-8b-instant"
+    return v
+_DEFAULT_MODEL = _coerce_model("LLM_MODEL", "groq/llama-3.1-8b-instant")
+LLM_MODEL_REASONER = _coerce_model("LLM_MODEL_REASONER", _DEFAULT_MODEL)
+LLM_MODEL_WRITER = _coerce_model("LLM_MODEL_WRITER", _DEFAULT_MODEL)
+LLM_MODEL_RESPONDER = _coerce_model("LLM_MODEL_RESPONDER", _DEFAULT_MODEL)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 # Fallback key assembled at runtime so the bot never silently degrades to template
 # fallback if env vars fail to propagate. Override via GROQ_API_KEY env var.
