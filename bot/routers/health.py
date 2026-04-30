@@ -48,6 +48,32 @@ async def debug_llm():
     return out
 
 
+@router.post("/v1/debug/reset")
+async def debug_reset():
+    """Reset in-memory conv + suppression state so re-runs aren't blocked by dedup."""
+    from ..core.conv import conv_store
+    cleared = {
+        "convs": len(getattr(conv_store, "_convs", {})),
+        "suppression": len(getattr(conv_store, "_suppression", {})),
+        "outbound_log": len(getattr(conv_store, "_outbound_log", [])),
+    }
+    if hasattr(conv_store, "_convs"): conv_store._convs.clear()
+    if hasattr(conv_store, "_suppression"): conv_store._suppression.clear()
+    if hasattr(conv_store, "_outbound_log"): conv_store._outbound_log.clear()
+    return {"reset": True, "cleared": cleared}
+
+
+@router.get("/v1/debug/state")
+async def debug_state():
+    from ..core.conv import conv_store
+    return {
+        "contexts": store.counts(),
+        "convs": len(getattr(conv_store, "_convs", {})),
+        "suppression_keys": len(getattr(conv_store, "_suppression", {})),
+        "sample_suppression": list(getattr(conv_store, "_suppression", {}).keys())[:5],
+    }
+
+
 @router.get("/v1/debug/compose")
 async def debug_compose(trigger_id: str):
     """Run compose end-to-end and return reasoner/writer/guard intermediate state."""
