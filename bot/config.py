@@ -31,15 +31,15 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 _GK = "_".join(["gsk", "TF5D8HXc5sq7DXM1CzvwWGdyb3FY" + "jmomb0EDzPvTxOLqCBcQBCBN"])
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "") or _GK
 
-LLM_TIMEOUT_S = float(os.getenv("LLM_TIMEOUT_S", "12"))
-LLM_MAX_CONCURRENCY = int(os.getenv("LLM_MAX_CONCURRENCY", "2"))
+LLM_TIMEOUT_S = float(os.getenv("LLM_TIMEOUT_S", "10"))
+LLM_MAX_CONCURRENCY = int(os.getenv("LLM_MAX_CONCURRENCY", "3"))
 
-TICK_BUDGET_S = float(os.getenv("TICK_BUDGET_S", "28"))
-REPLY_BUDGET_S = float(os.getenv("REPLY_BUDGET_S", "28"))
+TICK_BUDGET_S = float(os.getenv("TICK_BUDGET_S", "13"))
+REPLY_BUDGET_S = float(os.getenv("REPLY_BUDGET_S", "13"))
 
 MAX_OUTBOUND_PER_MERCHANT_24H = int(os.getenv("MAX_OUTBOUND_PER_MERCHANT_24H", "2"))
 SUPPRESSION_WINDOW_HOURS = int(os.getenv("SUPPRESSION_WINDOW_HOURS", "48"))
 AUTO_REPLY_QUARANTINE_HOURS = int(os.getenv("AUTO_REPLY_QUARANTINE_HOURS", "6"))
-MAX_ACTIONS_PER_TICK = int(os.getenv("MAX_ACTIONS_PER_TICK", "2"))
+MAX_ACTIONS_PER_TICK = int(os.getenv("MAX_ACTIONS_PER_TICK", "3"))
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")

@@ -72,10 +72,10 @@ def _build(trigger: dict, merchant: dict, category: dict, customer: Optional[dic
         sign = "neeche" if delta < 0 else "upar"
         if hi:
             body = (f"{g}, aapke {metric} pichle 7 din mein {pct}% {sign} hain. "
-                    f"Ek root-cause check + ek fix sujha doon? Ek YES kaafi hai.")
+                    f"Ek root-cause check + ek fix sujha doon? Reply YES.")
         else:
             body = (f"{g}, your {metric} are {pct}% {'down' if delta<0 else 'up'} over 7 days. "
-                    f"Want me to flag the likely cause + one fix? Ek YES kaafi hai.")
+                    f"Want me to flag the likely cause + one fix? Reply YES.")
         return dict(body=body, cta="yes_no", suppression_key=sup,
                     rationale=f"Lever: specificity. Anchor: merchant.performance.delta_7d.{metric} (template fallback).")
 
@@ -100,10 +100,10 @@ def _build(trigger: dict, merchant: dict, category: dict, customer: Optional[dic
         bsuffix = f" ({bstr})" if bstr else ""
         if hi:
             body = (f"{g}, {molecule}{bsuffix} ka recall / replacement aaya hai — "
-                    f"affected customers ki list nikaal du? Ek YES kaafi hai.")
+                    f"affected customers ki list nikaal du? Reply YES.")
         else:
             body = (f"{g}, {molecule}{(' batches ' + bstr) if bstr else ''} need replacement. "
-                    f"Want me to pull affected customers? Ek YES kaafi hai.")
+                    f"Want me to pull affected customers? Reply YES.")
         return dict(body=body, cta="yes_no", suppression_key=sup,
                     rationale="Lever: loss_aversion. Anchor: trigger.payload.batches (template fallback).")
 
@@ -113,11 +113,11 @@ def _build(trigger: dict, merchant: dict, category: dict, customer: Optional[dic
         if is_weekend:
             offer = _first_offer_title(merchant) or "delivery special"
             base = (f"{g}, {opps} aaj — Saturday/Sunday pe log ghar pe dekhte hain. "
-                    f'"{offer}" ko delivery push karein? Ek YES kaafi hai.')
+                    f'"{offer}" ko delivery push karein? Reply YES.')
         else:
             offer = _first_offer_title(merchant) or "match-night offer"
             base = (f"{g}, {opps} aaj — weeknight crowd dine-in mein aata hai. "
-                    f'"{offer}" pe match-night promo chalu karu? Ek YES kaafi hai.')
+                    f'"{offer}" pe match-night promo chalu karu? Reply YES.')
         return dict(body=base, cta="yes_no", suppression_key=sup,
                     rationale="Lever: specificity (counter-intuitive day-check). Anchor: trigger.payload (template fallback).")
 
@@ -141,10 +141,10 @@ def _build(trigger: dict, merchant: dict, category: dict, customer: Optional[dic
         dist_s = f" {dist} km dur" if dist else ""
         if hi:
             body = (f"{g}, {comp}{dist_s} pe khul gaya hai.{anchor} "
-                    f"Aapka counter-offer + 'why us' message draft karu? Ek YES kaafi hai.")
+                    f"Aapka counter-offer + 'why us' message draft karu? Reply YES.")
         else:
             body = (f"{g}, {comp} just opened{(' ' + str(dist) + ' km away') if dist else ''}.{anchor} "
-                    f"Want me to draft a counter-offer + 'why us' message? Ek YES kaafi hai.")
+                    f"Want me to draft a counter-offer + 'why us' message? Reply YES.")
         return dict(body=body, cta="yes_no", suppression_key=sup,
                     rationale="Lever: loss_aversion. Anchor: trigger.payload.competitor (template).")
 
@@ -155,10 +155,10 @@ def _build(trigger: dict, merchant: dict, category: dict, customer: Optional[dic
         qstr = f' Sample: "{quote}".' if quote else ""
         if hi:
             body = (f"{g}, pichle 30 din mein {n} reviews mein '{theme}' theme uthi hai.{qstr} "
-                    f"Ek public reply + ek operations fix sujha doon? Ek YES kaafi hai.")
+                    f"Ek public reply + ek operations fix sujha doon? Reply YES.")
         else:
             body = (f"{g}, {n} reviews in last 30d flagged '{theme}'.{qstr} "
-                    f"Want a public reply template + 1 ops fix? Ek YES kaafi hai.")
+                    f"Want a public reply template + 1 ops fix? Reply YES.")
         return dict(body=body, cta="yes_no", suppression_key=sup,
                     rationale="Lever: loss_aversion. Anchor: trigger.payload.theme (template).")
 
@@ -168,10 +168,10 @@ def _build(trigger: dict, merchant: dict, category: dict, customer: Optional[dic
         mv = payload.get("milestone_value", "")
         if hi:
             body = (f"{g}, aapka {metric} {nv} pe pahunch gaya hai — {mv} bas thoda dur. "
-                    f'"Thank you" creative + ek incentive post launch karu? Ek YES kaafi hai.')
+                    f'"Thank you" creative + ek incentive post launch karu? Reply YES.')
         else:
             body = (f"{g}, your {metric} just hit {nv} — only {mv} away from the milestone. "
-                    f'Want a "thank you" creative + an incentive post? Ek YES kaafi hai.')
+                    f'Want a "thank you" creative + an incentive post? Reply YES.')
         return dict(body=body, cta="yes_no", suppression_key=sup,
                     rationale="Lever: social_proof. Anchor: merchant.performance.metric (template).")
 
@@ -182,10 +182,10 @@ def _build(trigger: dict, merchant: dict, category: dict, customer: Optional[dic
         amt_s = f" Rs {amt}" if amt else ""
         if hi:
             body = (f"{g}, aapka {plan} plan{amt_s} renewal {days} din mein due hai. "
-                    f"1-tap renewal link bhej du? Ek YES kaafi hai.")
+                    f"1-tap renewal link bhej du? Reply YES.")
         else:
             body = (f"{g}, your {plan} plan renews in {days} days{amt_s}. "
-                    f"Should I send the 1-tap renewal? Ek YES kaafi hai.")
+                    f"Should I send the 1-tap renewal? Reply YES.")
         return dict(body=body, cta="yes_no", suppression_key=sup,
                     rationale="Lever: loss_aversion. Anchor: trigger.payload.days_remaining (template).")
 
@@ -198,10 +198,10 @@ def _build(trigger: dict, merchant: dict, category: dict, customer: Optional[dic
             dipstr = f" calls {abs(int(dip*100))}% neeche" if hi else f" calls {abs(int(dip*100))}% down"
         if hi:
             body = (f"{g}, expiry ke {d} din ho gaye —{dipstr}, {lapsed} customers ne dur ja diya. "
-                    f"50% off ek week winback offer chalu karu? Ek YES kaafi hai.")
+                    f"50% off ek week winback offer chalu karu? Reply YES.")
         else:
             body = (f"{g}, {d} days since expiry —{dipstr}, {lapsed} customers lapsed. "
-                    f"Want a 50%-off 7-day winback push? Ek YES kaafi hai.")
+                    f"Want a 50%-off 7-day winback push? Reply YES.")
         return dict(body=body, cta="yes_no", suppression_key=sup,
                     rationale="Lever: loss_aversion. Anchor: trigger.payload (template).")
 
@@ -246,10 +246,10 @@ def _build(trigger: dict, merchant: dict, category: dict, customer: Optional[dic
         d_id = payload.get("top_item_id", "")
         if hi:
             body = (f"{g}, ek niyam-update aaya hai — compliance deadline {deadline} hai. "
-                    f"2-min checklist nikaal du? Ek YES kaafi hai.")
+                    f"2-min checklist nikaal du? Reply YES.")
         else:
             body = (f"{g}, a regulatory update is out — compliance deadline {deadline}. "
-                    f"Want the 2-min checklist? Ek YES kaafi hai.")
+                    f"Want the 2-min checklist? Reply YES.")
         return dict(body=body, cta="yes_no", suppression_key=sup,
                     rationale=f"Lever: loss_aversion. Anchor: category.digest[{d_id}] (template).")
 
@@ -260,10 +260,10 @@ def _build(trigger: dict, merchant: dict, category: dict, customer: Optional[dic
         note = payload.get("season_note", "seasonal pattern")
         if hi:
             body = (f"{g}, aapke {metric} {pct}% neeche hain — yeh expected hai ({note}). "
-                    f"Off-season retention play sujha doon? Ek YES kaafi hai.")
+                    f"Off-season retention play sujha doon? Reply YES.")
         else:
             body = (f"{g}, {metric} are down {pct}% — this is expected ({note}). "
-                    f"Want an off-season retention play? Ek YES kaafi hai.")
+                    f"Want an off-season retention play? Reply YES.")
         return dict(body=body, cta="yes_no", suppression_key=sup,
                     rationale="Lever: reciprocity. Anchor: trigger.payload.is_expected_seasonal (template).")
 
@@ -273,10 +273,10 @@ def _build(trigger: dict, merchant: dict, category: dict, customer: Optional[dic
         top = trends[0] if trends else ""
         if hi:
             body = (f"{g}, {season} mein '{top}' jaise demand spike aa rahe hain. "
-                    f"Shelf adjustment + 1 promo plan bhej du? Ek YES kaafi hai.")
+                    f"Shelf adjustment + 1 promo plan bhej du? Reply YES.")
         else:
             body = (f"{g}, {season} demand: {top} is spiking. "
-                    f"Want a shelf adjustment + 1 promo plan? Ek YES kaafi hai.")
+                    f"Want a shelf adjustment + 1 promo plan? Reply YES.")
         return dict(body=body, cta="yes_no", suppression_key=sup,
                     rationale="Lever: specificity. Anchor: trigger.payload.trends (template).")
 
@@ -286,10 +286,10 @@ def _build(trigger: dict, merchant: dict, category: dict, customer: Optional[dic
         path = payload.get("verification_path", "")
         if hi:
             body = (f"{g}, aapka Google Business Profile ab tak verify nahi hua{upstr}. "
-                    f"{path} ke through karein — main steps bhej du? Ek YES kaafi hai.")
+                    f"{path} ke through karein — main steps bhej du? Reply YES.")
         else:
             body = (f"{g}, your GBP isn't verified yet{upstr}. "
-                    f"Use {path} — want me to send the steps? Ek YES kaafi hai.")
+                    f"Use {path} — want me to send the steps? Reply YES.")
         return dict(body=body, cta="yes_no", suppression_key=sup,
                     rationale="Lever: loss_aversion. Anchor: trigger.payload.verified=false (template).")
 
@@ -300,10 +300,10 @@ def _build(trigger: dict, merchant: dict, category: dict, customer: Optional[dic
         fee_s = " (free for members)" if "free" in str(fee) else (f" ({fee})" if fee else "")
         if hi:
             body = (f"{g}, ek webinar aaya hai — {cred} CDE credits{fee_s}. "
-                    f"Calendar invite bhej du? Ek YES kaafi hai.")
+                    f"Calendar invite bhej du? Reply YES.")
         else:
             body = (f"{g}, a webinar is out — {cred} CDE credits{fee_s}. "
-                    f"Want the calendar invite? Ek YES kaafi hai.")
+                    f"Want the calendar invite? Reply YES.")
         return dict(body=body, cta="yes_no", suppression_key=sup,
                     rationale=f"Lever: reciprocity. Anchor: category.digest[{d_id}] (template).")
 
