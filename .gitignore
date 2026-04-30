@@ -12,3 +12,5 @@ bot/eval/results/
 *.zip
 .DS_Store
 judge_simulator.py
+judge_*.txt
+judge_run*.txt
