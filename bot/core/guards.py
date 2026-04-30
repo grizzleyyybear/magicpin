@@ -152,8 +152,8 @@ def check_hindi_when_required(ctx: GuardContext) -> Optional[str]:
     if "hi" not in langs:
         return None
     if _hindi_token_count(ctx.body) < 1:
-        return ("Merchant language preference includes 'hi'. Rewrite as natural Hindi-English code-mix "
-                "(e.g., use words like 'aapke', 'kya', 'chalega', 'haan', 'karu').")
+        return ("Merchant language preference includes 'hi'. Add one or two light Hindi tokens "
+                "(e.g., 'haan', 'thoda', 'abhi', 'kal') without writing full romanized-Hindi sentences.")
     return None
 
 

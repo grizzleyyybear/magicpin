@@ -76,8 +76,8 @@ async def reply(body: ReplyBody):
             # Probe ONCE.
             owner = (((store.get("merchant", conv.merchant_id) or {}).get("identity") or {}).get("owner_first_name")) or ""
             sal = f"{owner}, " if owner else ""
-            probe = (f"{sal}lagta hai ye auto-reply hai 😊 jab aap khud message dekhe, "
-                     "reply YES — main 1-min wali baat seedhe aapko bhejunga.")
+            probe = (f"{sal}looks like that was an auto-reply. When you read this yourself, "
+                     "reply YES and I will send the one-minute version directly.")
             conv.state = "AUTO_REPLY_PROBED"
             conv_store.record_outbound(conv, probe, _now_iso())
             return ReplySendResponse(
@@ -115,8 +115,8 @@ async def reply(body: ReplyBody):
                                      rationale=msg.get("rationale", "Off-topic; one redirect.")).model_dump()
         # Fallback redirect.
         owner = ((merchant.get("identity") or {}).get("owner_first_name")) or ""
-        redirect = (f"{owner + ', ' if owner else ''}ye topic mere scope ke baahar hai — apne CA se baat kar lijiye. "
-                    "Apne actual trigger pe wapas chalein — main pehle wali baat finish karu?")
+        redirect = (f"{owner + ', ' if owner else ''}that question is outside my scope, "
+                    "your CA can help there. Should we go back and finish what we started?")
         conv_store.record_outbound(conv, redirect, _now_iso())
         return ReplySendResponse(body=redirect, cta="yes_no",
                                   rationale="Off-topic ask declined; one-line redirect to original trigger.").model_dump()
@@ -131,7 +131,7 @@ async def reply(body: ReplyBody):
             return ReplySendResponse(body=msg["body"], cta=msg.get("cta", "yes_no"),
                                      rationale=msg.get("rationale", "Explicit yes; delivering next step.")).model_dump()
         # Fallback acknowledgement.
-        ack = "Done — main next step prepare karke bhej raha hu. 1-2 min me update milega."
+        ack = "Done. Preparing the next step now, you'll have an update in 1 to 2 minutes."
         conv_store.record_outbound(conv, ack, _now_iso())
         return ReplySendResponse(body=ack, cta="none",
                                   rationale="LLM unavailable; sending action-mode acknowledgement.").model_dump()
