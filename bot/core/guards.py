@@ -31,10 +31,10 @@ ROMAN_HINDI_TOKENS = {
 
 CTA_QUESTION_HINTS = {
     "yes_no": [
-        "?",  # any question
-        " yes", " no", " yes/", "/no", "haan", "nahi",
+        "?",
+        "yes/no", "y/n", "haan ya nahi", "haan?", "nahi?",
         "shall i", "should i", "want me to", "would you like",
-        "ready?", "go ahead?", "confirm", "reply yes",
+        "ready?", "confirm?", "reply yes", "reply y",
     ],
     "open_ended": ["?"],
 }
@@ -234,27 +234,40 @@ def check_send_as(ctx: GuardContext) -> Optional[str]:
     return None
 
 
-CHECKS = [
+# Hard-fail checks (ship-blocker if they trip): URL, taboo, CTA, repeat, send_as,
+# offer_provenance. Soft checks (warn but ship): hindi, cite_fact — better to ship
+# a slightly off message than fall back to template.
+HARD_CHECKS = [
     ("url", check_url),
     ("taboo", check_taboo_vocab),
     ("cta", check_cta_value),
-    ("hindi", check_hindi_when_required),
     ("repeat", check_no_repeat),
-    ("cite_fact", check_must_cite_fact),
     ("offer_provenance", check_offer_provenance),
     ("send_as", check_send_as),
 ]
+SOFT_CHECKS = [
+    ("hindi", check_hindi_when_required),
+    ("cite_fact", check_must_cite_fact),
+]
+CHECKS = HARD_CHECKS + SOFT_CHECKS  # backwards-compat for tests
 
 
 def validate(ctx: GuardContext) -> ValidationResult:
-    issues = []
-    hints = []
-    for name, fn in CHECKS:
+    hard_issues, soft_issues, hints = [], [], []
+    for name, fn in HARD_CHECKS:
         msg = fn(ctx)
         if msg:
-            issues.append(f"{name}: {msg}")
+            hard_issues.append(f"{name}: {msg}")
             hints.append(msg)
-    if not issues:
+    for name, fn in SOFT_CHECKS:
+        msg = fn(ctx)
+        if msg:
+            soft_issues.append(f"{name}: {msg}")
+            hints.append(msg)
+    if not hard_issues and not soft_issues:
         return ValidationResult(ok=True)
-    retry_hint = "The previous message had these issues — fix them ALL in your next attempt:\n- " + "\n- ".join(hints)
-    return ValidationResult(ok=False, issues=issues, retry_hint=retry_hint)
+    retry_hint = "Fix these issues ALL in your next attempt:\n- " + "\n- ".join(hints)
+    if hard_issues:
+        return ValidationResult(ok=False, issues=hard_issues + soft_issues, retry_hint=retry_hint)
+    # Soft-only: ship anyway, attach hints for observability.
+    return ValidationResult(ok=True, issues=soft_issues, retry_hint=retry_hint)

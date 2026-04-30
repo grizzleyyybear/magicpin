@@ -63,76 +63,75 @@ async def call_json(
     timeout_s: float = 8.0,
     max_tokens: int = 700,
     temperature: float = 0.0,
+    fallback_models: Optional[list[str]] = None,
 ) -> Optional[dict]:
     """
     Call an LLM expecting strict JSON output. Returns parsed dict or None on failure.
-    One retry with a corrective hint if the first response doesn't parse.
+    Tries `model` first; on rate-limit / 429 / failure, walks through `fallback_models`.
+    One JSON-repair retry per model.
     """
     if litellm is None:
         logger.error("litellm not available")
         return None
+
+    # Default fallback chain: if 70b 429s, drop to 8b.
+    if fallback_models is None:
+        if "70b" in model:
+            fallback_models = ["groq/llama-3.1-8b-instant"]
+        elif "8b" in model:
+            fallback_models = ["groq/gemma2-9b-it"]
+        else:
+            fallback_models = []
+
+    models_to_try = [model] + [m for m in fallback_models if m != model]
 
     messages = [
         {"role": "system", "content": system},
         {"role": "user", "content": user},
     ]
 
-    async def _once(msgs):
+    async def _once(mdl, msgs, use_json_format=True):
         try:
-            resp = await asyncio.wait_for(
-                litellm.acompletion(
-                    model=model,
-                    messages=msgs,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                    response_format={"type": "json_object"},
-                    num_retries=0,
-                    max_retries=0,
-                ),
-                timeout=timeout_s,
+            kwargs = dict(
+                model=mdl, messages=msgs,
+                temperature=temperature, max_tokens=max_tokens,
+                num_retries=0, max_retries=0,
             )
-            return resp.choices[0].message.content or ""
+            if use_json_format:
+                kwargs["response_format"] = {"type": "json_object"}
+            resp = await asyncio.wait_for(
+                litellm.acompletion(**kwargs), timeout=timeout_s,
+            )
+            return resp.choices[0].message.content or "", None
         except asyncio.TimeoutError:
-            logger.warning(f"LLM timeout after {timeout_s}s on {model}")
-            return None
+            return None, "timeout"
         except Exception as e:
-            err_str = str(e).lower()
-            # Some models reject response_format - try once without it.
-            if "response_format" in err_str or "unsupported" in err_str:
-                try:
-                    resp = await asyncio.wait_for(
-                        litellm.acompletion(
-                            model=model,
-                            messages=msgs,
-                            temperature=temperature,
-                            max_tokens=max_tokens,
-                            num_retries=0,
-                        ),
-                        timeout=timeout_s,
-                    )
-                    return resp.choices[0].message.content or ""
-                except Exception as e2:
-                    logger.warning(f"LLM call failed twice: {e2}")
-                    return None
-            logger.warning(f"LLM call failed: {type(e).__name__}: {str(e)[:200]}")
-            return None
+            return None, f"{type(e).__name__}:{str(e)[:160]}"
 
-    raw = await _once(messages)
-    if raw is None:
-        return None
-    try:
-        return json.loads(_strip_to_json(raw))
-    except json.JSONDecodeError:
-        # Retry once with a corrective hint.
-        retry_msgs = messages + [
-            {"role": "assistant", "content": raw},
-            {"role": "user", "content": "Your previous response was not valid JSON. Reply with ONLY the JSON object, no prose, no code fences."},
-        ]
-        raw2 = await _once(retry_msgs)
-        if raw2 is None:
+    for mdl in models_to_try:
+        raw, err = await _once(mdl, messages, True)
+        if raw is None and err and "response_format" in err.lower():
+            raw, err = await _once(mdl, messages, False)
+        if raw is None:
+            logger.warning(f"LLM {mdl} failed: {err}")
+            # Only fall over on rate limits / capacity errors
+            if err and any(s in err.lower() for s in ("ratelimit", "429", "overloaded", "capacity", "timeout")):
+                continue
             return None
         try:
-            return json.loads(_strip_to_json(raw2))
-        except json.JSONDecodeError as e:
-            logger.warning(f"LLM JSON parse failed twice: {e}; raw='{raw2[:200]}'")
-            return None
+            return json.loads(_strip_to_json(raw))
+        except json.JSONDecodeError:
+            retry_msgs = messages + [
+                {"role": "assistant", "content": raw},
+                {"role": "user", "content": "Your previous response was not valid JSON. Reply with ONLY the JSON object, no prose, no code fences."},
+            ]
+            raw2, err2 = await _once(mdl, retry_msgs, True)
+            if raw2 is None:
+                logger.warning(f"LLM {mdl} JSON-repair failed: {err2}")
+                continue
+            try:
+                return json.loads(_strip_to_json(raw2))
+            except json.JSONDecodeError as e:
+                logger.warning(f"LLM {mdl} JSON parse failed twice: {e}; raw='{raw2[:200]}'")
+                continue
+    return None

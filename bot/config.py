@@ -11,9 +11,13 @@ BOT_VERSION = os.getenv("BOT_VERSION", "0.1.0")
 SUBMITTED_AT = os.getenv("SUBMITTED_AT", "2026-04-30T12:00:00Z")
 
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "groq")
-# Groq is the default: free tier ~14k req/day, sub-second latency.
-# Override per-stage by setting LLM_MODEL_REASONER / _WRITER / _RESPONDER.
-_DEFAULT_MODEL = os.getenv("LLM_MODEL", "groq/llama-3.3-70b-versatile")
+# Strategy on Groq free tier (per-model TPM buckets):
+#   - 70b-versatile: 6k TPM bucket → reserve for high-value writer calls
+#   - 8b-instant:    high TPM, fast → use as primary for everything
+#                    With LLM auto-fallback in llm.py, even if a model 429s
+#                    we drop to gemma2-9b-it.
+# Default ALL stages to 8b for resilience; override via env if you have paid tier.
+_DEFAULT_MODEL = os.getenv("LLM_MODEL", "groq/llama-3.1-8b-instant")
 LLM_MODEL_REASONER = os.getenv("LLM_MODEL_REASONER", _DEFAULT_MODEL)
 LLM_MODEL_WRITER = os.getenv("LLM_MODEL_WRITER", _DEFAULT_MODEL)
 LLM_MODEL_RESPONDER = os.getenv("LLM_MODEL_RESPONDER", _DEFAULT_MODEL)
@@ -23,8 +27,8 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 _GK = "_".join(["gsk", "TF5D8HXc5sq7DXM1CzvwWGdyb3FY" + "jmomb0EDzPvTxOLqCBcQBCBN"])
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "") or _GK
 
-LLM_TIMEOUT_S = float(os.getenv("LLM_TIMEOUT_S", "25"))
-LLM_MAX_CONCURRENCY = int(os.getenv("LLM_MAX_CONCURRENCY", "1"))
+LLM_TIMEOUT_S = float(os.getenv("LLM_TIMEOUT_S", "12"))
+LLM_MAX_CONCURRENCY = int(os.getenv("LLM_MAX_CONCURRENCY", "2"))
 
 TICK_BUDGET_S = float(os.getenv("TICK_BUDGET_S", "28"))
 REPLY_BUDGET_S = float(os.getenv("REPLY_BUDGET_S", "28"))

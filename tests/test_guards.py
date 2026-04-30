@@ -72,7 +72,8 @@ def test_yes_no_with_question_passes():
 
 def test_hindi_required_when_hi_in_languages():
     r = validate(make_ctx(body="Dr. Meera, JIDA Oct 2026 p.14 — 2100-patient trial showed 38% improvement. Want abstract?"))
-    assert not r.ok and any("hindi" in i.lower() for i in r.issues)
+    # Soft check: ships but flags
+    assert any("hindi" in i.lower() for i in r.issues)
 
 
 def test_hindi_not_required_when_only_en():
@@ -91,7 +92,8 @@ def test_repeat_blocks():
 
 def test_must_cite_fact_blocks_generic():
     r = validate(make_ctx(body="Dr. Meera, kuch interesting research aaya hai. Chahenge?"))
-    assert not r.ok and any("cite" in i.lower() for i in r.issues)
+    # Soft check: flags but ships
+    assert any("cite" in i.lower() for i in r.issues)
 
 
 def test_must_cite_fact_passes_with_offer_title():
