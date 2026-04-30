@@ -1,7 +1,9 @@
 # Vera Bot — magicpin AI Challenge submission
 
 **Team:** grizzleyyybear · Mrinal Sharma · mrinalsharmajune13@gmail.com
-**Model:** Groq Llama 3.3 70B Versatile (provider-agnostic via litellm — swap with one env var)
+**Bot URL:** https://vera-bot-l1rz.onrender.com
+**Model:** Groq `llama-3.1-8b-instant` (provider-agnostic via litellm — swap with one env var)
+**Local judge_simulator score:** 32–39/50 across runs (LLM-judge variance ±2/dim)
 
 ## Approach
 
