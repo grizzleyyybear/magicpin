@@ -46,3 +46,50 @@ async def debug_llm():
         out["error"] = f"{type(e).__name__}: {str(e)[:500]}"
         out["traceback"] = traceback.format_exc()[-800:]
     return out
+
+
+@router.get("/v1/debug/compose")
+async def debug_compose(trigger_id: str):
+    """Run compose end-to-end and return reasoner/writer/guard intermediate state."""
+    from ..core import reasoner as r_mod
+    from ..core import writer as w_mod
+    from ..core.guards import GuardContext, validate
+    out: dict = {"trigger_id": trigger_id}
+    trig = store.get("trigger", trigger_id)
+    if not trig:
+        return {"error": "trigger not in store", "available": list(store._data.get("trigger", {}).keys())[:10]}
+    trig = trig if "id" in trig else {**trig, "id": trigger_id}
+    mid = trig.get("merchant_id")
+    merchant = store.get("merchant", mid)
+    cust_id = trig.get("customer_id")
+    customer = store.get("customer", cust_id) if cust_id else None
+    cat_slug = (trig.get("payload") or {}).get("category") or (merchant or {}).get("category_slug")
+    category = store.get("category", cat_slug) if cat_slug else None
+    out["loaded"] = {"merchant": bool(merchant), "category": bool(category), "customer": bool(customer), "cat_slug": cat_slug}
+    if not (merchant and category):
+        return out
+    try:
+        t0 = time.time()
+        brief = await r_mod.reason(category, merchant, trig, customer)
+        out["reasoner_ms"] = int((time.time() - t0) * 1000)
+        out["brief"] = brief
+        if not brief:
+            out["fail"] = "reasoner returned None"; return out
+        t1 = time.time()
+        msg = await w_mod.write(brief, category, merchant, trig, customer, [])
+        out["writer_ms"] = int((time.time() - t1) * 1000)
+        out["msg"] = msg
+        if not msg:
+            out["fail"] = "writer returned None"; return out
+        gres = validate(GuardContext(
+            body=msg.get("body", ""), cta=msg.get("cta", ""),
+            suppression_key=msg.get("suppression_key", ""),
+            rationale=msg.get("rationale", ""),
+            category=category, merchant=merchant, trigger=trig, customer=customer,
+            previous_sent_bodies=[], decision_brief=brief,
+        ))
+        out["guards"] = {"ok": gres.ok, "issues": [str(i) for i in gres.issues]}
+    except Exception as e:
+        out["error"] = f"{type(e).__name__}: {str(e)[:500]}"
+        out["traceback"] = traceback.format_exc()[-1000:]
+    return out
