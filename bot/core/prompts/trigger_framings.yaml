@@ -1,0 +1,176 @@
+# Per-trigger-kind framing snippets injected into the Reasoner prompt.
+# Each snippet is a single string that will appear under the heading "framing:" in the user message.
+
+default: |
+  No specific framing for this trigger kind. Apply the general decision rules.
+  Pick the highest-leverage fact from contexts and a lever you can defend in rationale.
+
+research_digest: |
+  signal: cite the category.digest item matching trigger.payload.top_item_id — title + source string + trial_n (if present)
+  lever: reciprocity (offer to draft / pull abstract for them)
+  dont: vague "interesting research found" without n= and source citation
+  cta: open_ended
+
+regulation_change: |
+  signal: deadline date + the specific rule change + the operational audit action
+  lever: loss_aversion (compliance risk before the deadline)
+  dont: vague compliance reminder without the date and what to actually audit
+  cta: open_ended
+
+cde_webinar: |
+  signal: webinar title + date + speaker + credits if available
+  lever: curiosity + reciprocity
+  dont: bland "you might be interested in this event"; lean on credits / speaker authority
+  cta: yes_no (book me a slot / share calendar invite)
+
+perf_dip: |
+  signal: the dropped metric + percent from merchant.performance.delta_7d, compared to category.peer_stats baseline
+  lever: specificity + asking_merchant (diagnostic, not panicky)
+  dont: panic framing; use one signal from merchant.signals to propose a single cause + fix
+  cta: yes_no (fix one thing now)
+
+perf_spike: |
+  signal: the spiking metric + percent from merchant.performance.delta_7d
+  lever: reciprocity (compound the win)
+  dont: empty congrats; tie a real active offer or a Google post action to ride the spike
+  cta: yes_no
+
+seasonal_dip: |
+  signal: the seasonal range + peer benchmark normal range from category.seasonal_beats
+  lever: loss_aversion_inverted — reassure dip is normal; redirect spend to retention
+  dont: alarm the merchant; reframe + propose retention play on existing members
+  cta: yes_no
+
+festival_upcoming: |
+  signal: festival name + days away + a service+price from category.offer_catalog (NOT a generic % discount)
+  lever: loss_aversion (window closes)
+  dont: generic "festival sale"; pick a service+price line from offer_catalog
+  cta: yes_no
+
+ipl_match_today: |
+  signal: match details + day-of-week reasoning. If Sat/Sun → push delivery special using existing offer.
+  lever: specificity (counter-intuitive: weekend IPL ≈ -12% covers, people watch at home)
+  dont: blindly push dine-in IPL promo; check day-of-week and existing offers first
+  cta: yes_no
+
+local_news_event: |
+  signal: event headline + locality match + concrete action for this merchant type
+  lever: curiosity
+  dont: restate the news without proposing a merchant action
+  cta: open_ended
+
+competitor_opened: |
+  signal: distance + the specific competitor type + the gap the merchant wins on (from peer_stats or signals)
+  lever: loss_aversion + social_proof
+  dont: alarm the merchant without a counter-position; use peer_stats axis they lead on
+  cta: yes_no
+
+category_trend_movement: |
+  signal: query + delta_yoy + segment age — link to an existing offer (or offer_catalog template)
+  lever: curiosity + specificity
+  dont: trend mention without connecting to a specific offer the merchant can act on
+  cta: yes_no
+
+milestone_reached: |
+  signal: the milestone count + relative position vs peer_stats
+  lever: reciprocity
+  dont: empty congrats; offer to draft a "X reviews and counting" GBP post or social-proof asset
+  cta: yes_no
+
+dormant_with_vera: |
+  signal: one fresh digest item (not in conversation_history) OR one below-peer metric
+  lever: curiosity
+  dont: guilt-trip about not replying; pick a fresh angle, low-stakes
+  cta: open_ended
+
+customer_lapsed_soft: |
+  signal: months since customer.relationship.last_visit + last service_received + a real catalog price
+  lever: reciprocity (no-shame, no-judgment)
+  dont: guilt-trip; warm re-entry, propose ONE specific slot honoring customer.preferences
+  cta: open_ended
+  send_as: merchant_on_behalf
+
+recall_due: |
+  signal: clinical recall window + months since last_visit + 1-2 concrete slots + real catalog price
+  lever: reciprocity + specificity
+  consent: required scope "recall_reminders" in customer.consent.scope
+  dont: medical claims; multi-choice menu of >2 slots
+  cta: open_ended
+  send_as: merchant_on_behalf
+
+chronic_refill_due: |
+  signal: molecule names + run-out date + existing free delivery / senior discount offer
+  lever: specificity + effort_externalization
+  consent: required scope includes "appointment_reminders" or chronic refill consent
+  dont: generic refill nudge; use full molecule names + total + savings
+  cta: yes_no (CONFIRM to dispatch)
+  send_as: merchant_on_behalf
+
+supply_alert: |
+  signal: batch numbers + manufacturer + count of affected customers derived from customer_aggregate
+  lever: loss_aversion (compliance) — bound the risk ("no safety risk, replacement only")
+  dont: alarming language; always provide the bounded-risk frame and propose end-to-end workflow
+  cta: yes_no
+
+review_theme_emerged: |
+  signal: theme name + occurrence count + ONE concrete operational fix tied to merchant.signals
+  lever: reciprocity
+  dont: vague "improve service" advice; propose a specific change (Sunday roster / online queue)
+  cta: yes_no
+
+scheduled_recurring: |
+  signal: ask ONE specific question about this week's demand for a service in offer_catalog
+  lever: asking_merchant
+  dont: generic "how are things"; tie the question to current seasonal_beat or trend_signal
+  cta: open_ended
+
+curious_ask_due: |
+  signal: same as scheduled_recurring — pick the most-asked-service angle
+  lever: asking_merchant + reciprocity (offer to turn answer into an asset)
+  dont: ask without offering anything in return; promise an asset (Google post + WhatsApp reply draft)
+  cta: open_ended
+
+appointment_tomorrow: |
+  signal: appointment time + customer name + service from booking
+  lever: specificity (low-friction reminder, single confirm)
+  dont: long preamble; lead with the time and ask for one-tap confirm
+  cta: yes_no
+  send_as: merchant_on_behalf
+
+trial_followup: |
+  signal: days since trial + the goal customer signed up for + a concrete next-step offer
+  lever: reciprocity
+  dont: hard sell; warm reminder + one specific class/slot match
+  cta: yes_no
+  send_as: merchant_on_behalf
+
+active_planning_intent: |
+  signal: merchant's last question is a planning ask — produce the drafted artifact in the message body
+  lever: effort_externalization
+  dont: ask another qualifying question; the merchant said yes — DELIVER the draft
+  cta: yes_no (use this draft / I'll edit)
+
+bridal_followup: |
+  signal: days to wedding + a real catalog package at a real price + customer.preferences slot
+  lever: specificity + reciprocity
+  dont: generic bridal pitch; cite days-to-wedding and propose ONE specific slot
+  cta: yes_no
+  send_as: merchant_on_behalf
+
+winback: |
+  signal: days since expiry + concrete perf gap (before vs during gap) + a real winback offer
+  lever: loss_aversion
+  dont: pure subscription pitch; show the concrete performance impact in numbers
+  cta: yes_no
+
+renewal_due: |
+  signal: days_remaining + retention metric + biggest unrealized opportunity in performance
+  lever: loss_aversion
+  dont: "your subscription is ending" with no value frame; lead with what they'd lose
+  cta: yes_no
+
+unverified_gbp: |
+  signal: the specific verification gap + impact (peer_stats vs current views/CTR)
+  lever: effort_externalization (Vera offers to drive the verification)
+  dont: scolding tone; offer to drive the verification, 2-min effort cap
+  cta: yes_no
